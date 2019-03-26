@@ -227,13 +227,13 @@ class GCNEncoder(EncoderBase):
             self.emb_morph_emb = nn.Linear(num_inputs+morph_embeddings.embedding_size, num_inputs)
 
         self.H_1 = torch.nn.parameter.Parameter(torch.Tensor(self.num_units, self.num_units))
-        nn.init.xavier_normal(self.H_1)
+        nn.init.xavier_normal_(self.H_1)
         self.H_2 = torch.nn.parameter.Parameter(torch.Tensor(self.num_units, self.num_units))
-        nn.init.xavier_normal(self.H_2)
+        nn.init.xavier_normal_(self.H_2)
         self.H_3 = torch.nn.parameter.Parameter(torch.Tensor(self.num_units, self.num_units))
-        nn.init.xavier_normal(self.H_3)
+        nn.init.xavier_normal_(self.H_3)
         self.H_4 = torch.nn.parameter.Parameter(torch.Tensor(self.num_units, self.num_units))
-        nn.init.xavier_normal(self.H_4)
+        nn.init.xavier_normal_(self.H_4)
 
         self.gcn_layers = []
         if residual == '' or residual == 'residual':
@@ -841,7 +841,7 @@ class DecoderState(object):
     def detach(self):
         for h in self._all:
             if h is not None:
-                h.detach_()
+                h.detach()
 
     def beam_update(self, idx, positions, beam_size):
         for e in self._all:

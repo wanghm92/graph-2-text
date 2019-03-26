@@ -329,6 +329,8 @@ class Trainer(object):
 
             tgt_outer = onmt.io.make_features(batch, 'tgt')
 
+            # print(trunc_size)
+            # print(target_size)
             for j in range(0, target_size-1, trunc_size):
                 # 1. Create truncated target.
                 tgt = tgt_outer[j: j + trunc_size]
@@ -353,10 +355,12 @@ class Trainer(object):
                     outputs, attns, dec_state = \
                         self.model(src, tgt, src_lengths, dec_state)
 
+                # retain_graph is false for the final truncation
+                retain_graph = (j + trunc_size) < (target_size - 1)
                 # 3. Compute loss in shards for memory efficiency.
                 batch_stats = self.train_loss.sharded_compute_loss(
                         batch, outputs, attns, j,
-                        trunc_size, self.shard_size, normalization)
+                        trunc_size, self.shard_size, normalization, retain_graph=retain_graph)
 
                 # 4. Update the parameters and statistics.
                 if self.grad_accum_count == 1:

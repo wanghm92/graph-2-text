@@ -87,7 +87,7 @@ class LossComputeBase(nn.Module):
 
     def sharded_compute_loss(self, batch, output, attns,
                              cur_trunc, trunc_size, shard_size,
-                             normalization):
+                             normalization, retain_graph=False):
         """Compute the forward loss and backpropagate.  Computation is done
         with shards and optionally truncation for memory efficiency.
 
@@ -115,13 +115,14 @@ class LossComputeBase(nn.Module):
             :obj:`onmt.Statistics`: validation loss statistics
 
         """
+        # print(retain_graph)
         batch_stats = onmt.Statistics()
         range_ = (cur_trunc, cur_trunc + trunc_size)
         shard_state = self._make_shard_state(batch, output, range_, attns)
 
-        for shard in shards(shard_state, shard_size):
+        for shard in shards(shard_state, shard_size, retain_graph=retain_graph):
             loss, stats = self._compute_loss(batch, **shard)
-            loss.div(normalization).backward()
+            loss.div(normalization).backward(retain_graph=True)
             batch_stats.update(stats)
 
         return batch_stats
@@ -141,7 +142,7 @@ class LossComputeBase(nn.Module):
         num_correct = pred.eq(target) \
                           .masked_select(non_padding) \
                           .sum()
-        return onmt.Statistics(loss[0], non_padding.sum(), num_correct)
+        return onmt.Statistics(loss.item(), non_padding.sum(), num_correct)
 
     def _bottle(self, v):
         return v.view(-1, v.size(2))
@@ -165,7 +166,7 @@ class NMTLossCompute(LossComputeBase):
             # If label smoothing value is set to zero, the loss
             # is equivalent to NLLLoss or CrossEntropyLoss.
             # All non-true labels are uniformly set to low-confidence.
-            self.criterion = nn.KLDivLoss(size_average=False)
+            self.criterion = nn.KLDivLoss(reduction='sum')
             one_hot = torch.randn(1, len(tgt_vocab))
             one_hot.fill_(label_smoothing / (len(tgt_vocab) - 2))
             one_hot[0][self.padding_idx] = 0
@@ -173,7 +174,7 @@ class NMTLossCompute(LossComputeBase):
         else:
             weight = torch.ones(len(tgt_vocab))
             weight[self.padding_idx] = 0
-            self.criterion = nn.NLLLoss(weight, size_average=False)
+            self.criterion = nn.NLLLoss(weight, reduction='sum')
         self.confidence = 1.0 - label_smoothing
 
     def _make_shard_state(self, batch, output, range_, attns=None):
@@ -218,7 +219,7 @@ def filter_shard_state(state, requires_grad=True, volatile=False):
             yield k, v
 
 
-def shards(state, shard_size, eval=False):
+def shards(state, shard_size, eval=False, retain_graph=False):
     """
     Args:
         state: A dictionary which corresponds to the output of
@@ -262,4 +263,4 @@ def shards(state, shard_size, eval=False):
         variables = ((state[k], v.grad.data) for k, v in non_none.items()
                      if isinstance(v, Variable) and v.grad is not None)
         inputs, grads = zip(*variables)
-        torch.autograd.backward(inputs, grads)
+        torch.autograd.backward(inputs, grads, retain_graph=retain_graph)

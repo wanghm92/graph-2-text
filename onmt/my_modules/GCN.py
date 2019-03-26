@@ -38,37 +38,37 @@ class GCNLayer(nn.Module):
 
         if in_arcs:
             self.V_in = Parameter(torch.Tensor(self.num_inputs, self.num_units))
-            nn.init.xavier_normal(self.V_in)
+            nn.init.xavier_normal_(self.V_in)
 
             self.b_in = Parameter(torch.Tensor(num_labels, self.num_units))
-            nn.init.constant(self.b_in, 0)
+            nn.init.constant_(self.b_in, 0)
 
             if self.use_gates:
                 self.V_in_gate = Parameter(torch.Tensor(self.num_inputs, 1))
-                nn.init.xavier_normal(self.V_in_gate)
+                nn.init.xavier_normal_(self.V_in_gate)
                 self.b_in_gate = Parameter(torch.Tensor(num_labels, 1))
-                nn.init.constant(self.b_in_gate, 1)
+                nn.init.constant_(self.b_in_gate, 1)
 
         if out_arcs:
             self.V_out = Parameter(torch.Tensor(self.num_inputs, self.num_units))
-            nn.init.xavier_normal(self.V_out)
+            nn.init.xavier_normal_(self.V_out)
 
             self.b_out = Parameter(torch.Tensor(num_labels, self.num_units))
-            nn.init.constant(self.b_out, 0)
+            nn.init.constant_(self.b_out, 0)
 
             if self.use_gates:
                 self.V_out_gate = Parameter(torch.Tensor(self.num_inputs, 1))
-                nn.init.xavier_normal(self.V_out_gate)
+                nn.init.xavier_normal_(self.V_out_gate)
                 self.b_out_gate = Parameter(torch.Tensor(num_labels, 1))
-                nn.init.constant(self.b_out_gate, 1)
+                nn.init.constant_(self.b_out_gate, 1)
 
         self.W_self_loop = Parameter(torch.Tensor(self.num_inputs, self.num_units))
 
-        nn.init.xavier_normal(self.W_self_loop)
+        nn.init.xavier_normal_(self.W_self_loop)
 
         if self.use_gates:
             self.W_self_loop_gate = Parameter(torch.Tensor(self.num_inputs, 1))
-            nn.init.xavier_normal(self.W_self_loop_gate)
+            nn.init.xavier_normal_(self.W_self_loop_gate)
 
     def forward(self, src, lengths=None, arc_tensor_in=None, arc_tensor_out=None,
                 label_tensor_in=None, label_tensor_out=None,
